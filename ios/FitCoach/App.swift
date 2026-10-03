@@ -47,6 +47,7 @@ final class AppStore {
     var workouts: [Workout] = []
     var food: FoodDay?
     var goals: [Goal] = []
+    var scans: [Scan] = []
     var chat: [ChatMessage] = []
     var isSending = false
     var undoneFoodIds: Set<Int> = []
@@ -72,6 +73,7 @@ final class AppStore {
     func refreshWorkouts() async { await run { workouts = try await api.get("/workouts") } }
     func refreshFood() async { await run { food = try await api.get("/food?date=\(Dates.todayString)") } }
     func refreshGoals() async { await run { goals = try await api.get("/goals") } }
+    func refreshScans() async { await run { scans = try await api.get("/scans") } }
     func loadChat() async {
         guard !isSending else { return } // don't clobber the optimistic message mid-request
         await run { chat = try await api.get("/chat/history") }
@@ -96,8 +98,12 @@ final class AppStore {
         return session.sessionToken
     }
 
-    func saveBodyScan(bodyFatPercent: Double) async {
-        await run { profile = try await api.post("/profile/scan", ScanInput(bodyFatPercent: bodyFatPercent)) }
+    func allowScanStorage() async {
+        await run { profile = try await api.post("/profile", ConsentInput(scanStorageConsent: true)) }
+    }
+
+    func saveBodyScan(metrics: [ScanMetric]) async {
+        await run { let _: Scan = try await api.post("/scans", ScanInput(metrics: metrics)) }
         await refreshToday()
     }
 

@@ -29,7 +29,7 @@ struct CoachView: View {
                             Image(systemName: "ellipsis")
                                 .font(.system(size: 22, weight: .bold)).foregroundStyle(Theme.secondary)
                                 .symbolEffect(.variableColor.iterative)
-                                .accessibilityLabel("Coach is typing")
+                                .accessibilityLabel("Milo is typing")
                         }
                         Color.clear.frame(height: 1).id("bottom")
                     }
@@ -117,7 +117,9 @@ private struct MessageView: View {
         } else {
             VStack(alignment: .leading, spacing: 10) {
                 if !message.content.isEmpty {
-                    Text(message.content).font(Theme.text(15)).lineSpacing(4).foregroundStyle(Theme.ink)
+                    // Milo replies can contain inline markdown (**bold**); keep line breaks for lists.
+                    Text((try? AttributedString(markdown: message.content, options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace))) ?? AttributedString(message.content))
+                        .font(Theme.text(15)).lineSpacing(4).foregroundStyle(Theme.ink)
                 }
                 ForEach(Array((message.cards ?? []).enumerated()), id: \.offset) { _, card in
                     CardView(card: card)

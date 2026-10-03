@@ -7,3 +7,7 @@ __pycache__/
 .pytest_cache/
 verification-results/
 **/tools/cloudflared.exe
+ios/build/
+ios/*.xcodeproj/
+.DS_Store
+ios/FitCoach/Secrets.swift

@@ -22,7 +22,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 4) {
                 ScreenTitle(title: result == nil ? "About you" : "You’re set", size: 28)
-                Text(result == nil ? "Coach uses this to set your calorie and macro targets." : "Here’s where you start.")
+                Text(result == nil ? "Milo uses this to set your calorie and macro targets." : "Here’s where you start.")
                     .font(Theme.text(14)).foregroundStyle(Theme.secondary)
             }
             .padding(.top, 24)

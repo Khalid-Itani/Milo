@@ -5,7 +5,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>FitCoach</string>
+	<string>Milo</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -26,12 +26,16 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>FitCoach uses the TrueDepth camera for Visualize body scans.</string>
+	<string>Milo uses the TrueDepth camera for Visualize body scans.</string>
 	<key>UILaunchScreen</key>
 	<dict/>
 	<key>UISupportedInterfaceOrientations</key>
 	<array>
 		<string>UIInterfaceOrientationPortrait</string>
 	</array>
+	<key>UIUserInterfaceStyle</key>
+	<string>Light</string>
+	<key>VZPublishableKey</key>
+	<string>pk_test_n5K2sfz6B9bNSt4860hV87hBpYc7kXvlLqZ4wlOcRsU</string>
 </dict>
 </plist>

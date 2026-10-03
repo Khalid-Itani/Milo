@@ -61,7 +61,7 @@ struct EatView: View {
                 op("−")
                 stat(fmt(t.kcal.eaten), "Food")
                 op("=")
-                stat(fmt(t.kcal.left), "Left", color: Theme.fuel)
+                stat(fmt(abs(t.kcal.left)), t.kcal.left < 0 ? "Over" : "Left", color: t.kcal.left < 0 ? Theme.train : Theme.fuel)
             }
             HStack(spacing: 12) {
                 macro("Protein", t.macros.protein, Theme.fuel)
@@ -178,7 +178,7 @@ private struct FoodRow: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.name).font(Theme.text(14, .medium))
                 (Text("\(item.quantity) · \(fmt(item.proteinG)) P · \(fmt(item.carbsG)) C · \(fmt(item.fatG)) F")
-                    + (item.source == "coach" ? Text(" · ") + Text("via Coach").foregroundColor(Theme.fuel).fontWeight(.medium) : Text("")))
+                    + (item.source == "coach" ? Text(" · ") + Text("via Milo").foregroundColor(Theme.fuel).fontWeight(.medium) : Text("")))
                     .font(Theme.text(12)).foregroundColor(Theme.secondary)
             }
             Spacer()
@@ -194,7 +194,7 @@ private struct DinnerSuggestion: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Label("Coach suggests", systemImage: "sparkles").font(Theme.text(12, .semibold)).foregroundStyle(Theme.fuelDeep)
+            Label("Milo suggests", systemImage: "sparkles").font(Theme.text(12, .semibold)).foregroundStyle(Theme.fuelDeep)
             VStack(alignment: .leading, spacing: 1) {
                 Text("Salmon, rice & broccoli").font(Theme.text(15, .semibold))
                 Text("780 kcal · 48 g protein · fits what’s left today").font(Theme.text(12.5)).foregroundStyle(Theme.tertiary)

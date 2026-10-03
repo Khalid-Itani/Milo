@@ -24,14 +24,30 @@ actor APIClient {
         }
         var req = URLRequest(url: URL(string: path, relativeTo: Config.baseURL)!)
         req.httpMethod = method
-        req.timeoutInterval = 60 // /chat runs an LLM tool loop
+        req.timeoutInterval = 300 // /chat runs a multi-step LLM tool loop
+        req.setValue("Bearer \(Secrets.demoAPIToken)", forHTTPHeaderField: "Authorization")
+        if method != "GET" {
+            // Same key on every retry below, so the backend replays instead of saving twice.
+            req.setValue(UUID().uuidString, forHTTPHeaderField: "Idempotency-Key")
+        }
         if let bodyData {
             req.httpBody = bodyData
             req.setValue("application/json", forHTTPHeaderField: "Content-Type")
         }
-        let (data, resp) = try await URLSession.shared.data(for: req)
-        let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
-        guard (200..<300).contains(status) else { throw APIError(status: status, body: String(decoding: data, as: UTF8.self)) }
-        return try decoder.decode(T.self, from: data)
+        // Retry brief outages (tunnel reconnects return 502/503/504/52x; dropped connections throw).
+        var attempt = 0
+        while true {
+            attempt += 1
+            do {
+                let (data, resp) = try await URLSession.shared.data(for: req)
+                let status = (resp as? HTTPURLResponse)?.statusCode ?? 0
+                if (200..<300).contains(status) { return try decoder.decode(T.self, from: data) }
+                let error = APIError(status: status, body: String(decoding: data, as: UTF8.self))
+                guard [502, 503, 504, 520, 521, 522, 523, 524, 530].contains(status), attempt < 4 else { throw error }
+            } catch let e as URLError where e.code != .cancelled && attempt < 4 {
+                // fall through to retry
+            }
+            try await Task.sleep(for: .seconds(Double(attempt) * 1.5))
+        }
     }
 }

@@ -35,7 +35,7 @@ struct GoalsView: View {
                     Text(showCompleted ? "No completed goals yet." : "No active goals.")
                         .font(Theme.text(14)).foregroundStyle(Theme.secondary).padding(.vertical, 20)
                 }
-                DashedRow(text: "Tell Coach what you want to achieve") { store.openCoach(prefill: "Set a goal: ") }
+                DashedRow(text: "Tell Milo what you want to achieve") { store.openCoach(prefill: "Set a goal: ") }
             }
             .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
         }

@@ -13,7 +13,7 @@ struct TrainView: View {
                     group("Up next", store.workouts.filter { $0.status == "planned" })
                     group("Done", store.workouts.filter { $0.status == "done" })
                     if store.workouts.isEmpty {
-                        DashedRow(text: "Ask Coach to build a training plan") { store.openCoach(prefill: "Build me a training plan: ") }
+                        DashedRow(text: "Ask Milo to build a training plan") { store.openCoach(prefill: "Build me a training plan: ") }
                     }
                 }
                 .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 24)
@@ -83,7 +83,7 @@ struct WorkoutDetailView: View {
                 VStack(spacing: 12) {
                     header(w)
                     stats(w)
-                    ForEach(w.exercises.sorted { $0.position < $1.position }) { ExerciseCard(exercise: $0, editable: w.status != "done") }
+                    ForEach(w.exercises.sorted { $0.position < $1.position }) { ExerciseCard(exercise: $0, editable: w.status != "planned") } // finished sessions stay editable
                 }
                 .padding(.horizontal, 16).padding(.bottom, 24)
             } else {
@@ -91,6 +91,12 @@ struct WorkoutDetailView: View {
             }
         }
         .scrollDismissesKeyboard(.interactively)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil) }
+            }
+        }
         .screen()
         .navigationBarTitleDisplayMode(.inline)
         .task { if workout == nil { await store.refreshWorkouts() } }
@@ -223,6 +229,7 @@ private struct SetRow: View {
     var editable: Bool
     @State private var kg = ""
     @State private var reps = ""
+    @FocusState private var focused: Bool
 
     var body: some View {
         SetGrid {
@@ -251,6 +258,7 @@ private struct SetRow: View {
         .onAppear { kg = fmt(set.kg); reps = "\(set.reps)" }
         .onChange(of: set.kg) { kg = fmt(set.kg) }
         .onChange(of: set.reps) { reps = "\(set.reps)" }
+        .onChange(of: focused) { if !focused { save() } } // number pads have no return key
     }
 
     private func field(_ text: Binding<String>, placeholder: String, keyboard: UIKeyboardType) -> some View {
@@ -261,6 +269,7 @@ private struct SetRow: View {
             .frame(height: 34)
             .background(set.done ? .clear : Theme.field, in: RoundedRectangle(cornerRadius: 9))
             .disabled(!editable)
+            .focused($focused)
             .onSubmit(save)
     }
 

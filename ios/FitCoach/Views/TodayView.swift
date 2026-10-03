@@ -70,8 +70,9 @@ struct TodayView: View {
             ZStack {
                 Ring(progress: t.kcal.target > 0 ? t.kcal.eaten / t.kcal.target : 0)
                 VStack(spacing: 0) {
-                    Text(fmt(t.kcal.left)).font(Theme.mono(26)).tracking(-0.8)
-                    Text("kcal left").font(Theme.text(11.5, .medium)).foregroundStyle(Theme.secondary)
+                    Text(fmt(abs(t.kcal.left))).font(Theme.mono(26)).tracking(-0.8)
+                        .foregroundStyle(t.kcal.left < 0 ? Theme.train : Theme.ink)
+                    Text(t.kcal.left < 0 ? "kcal over" : "kcal left").font(Theme.text(11.5, .medium)).foregroundStyle(Theme.secondary)
                 }
             }
             .frame(width: 116, height: 116)
@@ -89,11 +90,15 @@ struct TodayView: View {
         .card(22, padding: 18)
     }
 
+    private func bodyFat(_ t: Today) -> Double? {
+        t.latestScan?.metrics.first { $0.identifier == "body_fat_percentage" }?.value
+    }
+
     private func metrics(_ t: Today) -> some View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible())], spacing: 10) {
             MetricTile(icon: "figure.stand", title: "BMI",
                        value: t.bmi?.value.map(fmt) ?? "—", unit: nil,
-                       footnote: t.bmi?.category.map { c in t.bodyFatPct.map { "\(c) · \(fmt($0))% fat" } ?? c } ?? "Add height and weight")
+                       footnote: t.bmi?.category.map { c in bodyFat(t).map { "\(c) · \(fmt($0))% fat" } ?? c } ?? "Add height and weight")
             // ponytail: no HealthKit in the MVP, so Sleep and Resting HR are placeholders.
             MetricTile(icon: "moon", title: "Sleep", value: "—", unit: nil, footnote: "No data")
             MetricTile(icon: "heart", title: "Resting HR", value: "—", unit: "bpm", footnote: "No data")
