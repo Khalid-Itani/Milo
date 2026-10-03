@@ -1,0 +1,19 @@
+[
+  {
+    "id": 1,
+    "name": "Vegetarian day",
+    "kcal": 2000,
+    "meals": [
+      {
+        "meal": "dinner",
+        "name": "Tofu rice bowl",
+        "kcal": 650,
+        "protein_g": 35,
+        "carbs_g": 80,
+        "fat_g": 20
+      }
+    ],
+    "created_at": "2026-10-03T16:00:00+00:00",
+    "status": "active"
+  }
+]

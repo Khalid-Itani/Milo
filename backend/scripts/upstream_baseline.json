@@ -1,0 +1,26 @@
+{
+  "repository": "Khalid-Itani/Milo",
+  "inspected_main_commit": "81f50574507424bf7d504ed04bf6b554d5a894e1",
+  "files": {
+    ".gitignore": "154149507882ae90281811ccbcd0edce14e15e05",
+    "README.md": "e914989b2272c361be6a90c625c940fb6de486ae",
+    "backend/.env.example": "b2dc986aa967bea587f491866e29b2b24976fdfa",
+    "backend/README.md": "e14830ee947e533a5fb5a2c7a0e0d2c2d20af2f4",
+    "backend/agent/__init__.py": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "backend/agent/coach.py": "fbfff421cea61c3b799d33bc5de9419efd7118b3",
+    "backend/agent/prompt.py": "97a2439a4625dda373a2602a0d847d64e5427e98",
+    "backend/agent/tools.py": "0a1b2622fff11d64a6cc5fdf3336d107c2daa2cf",
+    "backend/app/__init__.py": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "backend/app/bmi.py": "a69103cbc0d53a42b8f62e17377f14fd0ba51f41",
+    "backend/app/db.py": "db8c99a64154dc0b297bbac63b0f15c186ac9228",
+    "backend/app/main.py": "3abe649ae56d298b35d518ce69003a0ec2a60606",
+    "backend/app/models.py": "b6a6586f63458e85b546f45ce39e23203c9059fa",
+    "backend/app/schemas.py": "ab40f387a5d0bd160a1b16c623e5c359c0930c30",
+    "backend/app/seed.py": "2f9f7a9416d3d51f14930e1dbb7db3f01c21ac8e",
+    "backend/app/today.py": "5fae0bcb17c738924514fa8e652158c6bf5955d2",
+    "backend/requirements.txt": "07ddce52243ff8f88f05aa0112e3c104a75bf088",
+    "backend/scripts/demo_chat.sh": "d83c7ecc90dfb342cf23cf0dbfa04047ed1089aa",
+    "backend/tests/__init__.py": "e69de29bb2d1d6434b8b29ae775ad8c2e48c5391",
+    "backend/tests/test_api.py": "29e871d0c04f5c40e092d221c4bad337576c11bf"
+  }
+}

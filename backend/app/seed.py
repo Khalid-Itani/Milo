@@ -1,11 +1,14 @@
-"""Drop and recreate the DB with mockup data. `--fresh` leaves the profile empty to demo onboarding."""
-import sys
-from datetime import date, datetime, timedelta
+"""Explicit synthetic demo upsert. Never delete data, create schema, or seed on startup."""
+import argparse
+from datetime import datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
+from sqlmodel import select
+from sqlalchemy.exc import SQLAlchemyError
 
-from sqlmodel import Session
-
-from app.db import engine, init_db
-from app.models import ChatMessage, Exercise, FoodLog, Goal, User, Workout, WorkoutSet
+from app import db, services as svc
+from app.config import settings
+from app.models import User, WorkoutPlan, Workout, Exercise, WorkoutSession, FoodLog, Goal, ChatMessage
+from app.schemas import ProfileIn
 
 PLAN = [
     ("MON", "Upper A — Strength", "done", [("Bench Press", 5, 5, 85), ("Barbell Row", 4, 8, 70), ("Overhead Press", 3, 8, 45), ("Pull-up", 3, 8, None)]),
@@ -27,41 +30,77 @@ FOOD = [  # meal, name, quantity, kcal, P, C, F, source
 ]
 
 
-def seed(fresh: bool = False):
-    init_db(drop=True)
-    today = date.today()
-    monday = datetime.combine(today - timedelta(days=today.weekday()), datetime.min.time())
-    with Session(engine) as s:
-        profile = {} if fresh else dict(height_cm=180, weight_kg=74.6, age=21, sex="male", bmi=23.0, bmi_category="Normal")
-        s.add(User(id=1, name="Agam", kcal_target=2450, protein_g=160, carbs_g=260, fat_g=75, **profile))
-
-        for day, name, status, exercises in PLAN:
-            w = Workout(name=name, day_label=day, status=status, plan_id=1)
-            if status == "done":
-                w.started_at = monday + timedelta(days=DAY_OFFSET[day], hours=18)
-                w.finished_at = w.started_at + timedelta(minutes=55)
-            s.add(w)
-            s.flush()
-            for pos, (ex_name, sets, reps, kg) in enumerate(exercises):
-                e = Exercise(workout_id=w.id, name=ex_name, position=pos, target_sets=sets, target_reps=reps, target_kg=kg)
-                s.add(e)
+def seed(fresh=False, factory=None):
+    factory = factory or db.session_factory
+    with factory() as s:
+        with s.begin():
+            svc.guard_owner(s)
+            u = s.get(User, settings.demo_user_id)
+            if not u:
+                svc.save_profile(s, ProfileIn(**({} if fresh else dict(
+                    name="Agam (synthetic demo)", height_cm=180, weight_kg=74.6, age=21, sex="male",
+                    kcal_target=2450, protein_g=160, carbs_g=260, fat_g=75,
+                    available_days=["MON", "TUE", "THU", "SAT"]))))
+                u = svc.profile(s, required=True)
+                if not fresh:
+                    u.targets_source = "synthetic_demo"
+                    s.add(u)
+            if fresh:
+                return
+            def upsert(model, label, **data):
+                key = f"milo_demo_v1:{settings.demo_user_id}:{label}"
+                row = s.exec(svc.owned(model).where(model.seed_key == key)).first()
+                if row:
+                    return row, False
+                row = model(owner_id=settings.demo_user_id, seed_key=key, **data)
+                s.add(row)
                 s.flush()
-                for i in range(sets):
-                    s.add(WorkoutSet(exercise_id=e.id, set_index=i, kg=kg or 0, reps=reps, done=status == "done"))
-
-        for meal, name, qty, kcal, p, c, f, src in FOOD:
-            s.add(FoodLog(date=today.isoformat(), meal=meal, name=name, quantity=qty, kcal=kcal, protein_g=p, carbs_g=c, fat_g=f, source=src))
-
-        s.add_all([
-            Goal(title="Bench press 100 kg", kind="strength", unit="kg", start_value=85, current_value=95, target_value=100, deadline=date(today.year, 12, 15)),
-            Goal(title="Reach 72 kg", kind="body", unit="kg", start_value=76.8, current_value=74.6, target_value=72, deadline=date(today.year + (today.month > 1), 1, 31)),
-            Goal(title="160 g protein daily", kind="nutrition", unit="g", start_value=0, current_value=124, target_value=160),
-            Goal(title="Train 4× a week", kind="habit", unit="sessions", start_value=0, current_value=3, target_value=4),
-            ChatMessage(role="assistant", content="Hey Agam. Tell me what you ate or what you want to train, and I'll log and plan it."),
-        ])
-        s.commit()
-
+                return row, True
+            plan, _ = upsert(WorkoutPlan, "plan", name="Upper / Lower · 4 days (synthetic)", weeks=8)
+            day = svc.local_day(u)
+            monday = day-timedelta(days=day.weekday())
+            for label, name, status, specs in PLAN:
+                w, created = upsert(Workout, "workout:"+label, name=name, day_label=label,
+                                    notes="Synthetic demo template", plan_id=plan.id)
+                for pos, (ex_name, sets, reps, kg) in enumerate(specs):
+                    upsert(Exercise, f"exercise:{label}:{pos}", workout_id=w.id, name=ex_name, position=pos,
+                           target_sets=sets, target_reps=reps, target_kg=kg)
+                if created:
+                    current = svc.prepare_session(s, w)
+                    current.source = "synthetic"
+                    current.seed_key = f"milo_demo_v1:{settings.demo_user_id}:session:{label}"
+                    # Only seed dated completions which have already occurred, never future sessions.
+                    completed_day = monday+timedelta(days=DAY_OFFSET[label])
+                    if status == "done" and completed_day <= day:
+                        end = datetime.combine(completed_day, time(12), ZoneInfo(u.timezone)).astimezone(timezone.utc)
+                        current.status, current.started_at, current.finished_at = "completed", end-timedelta(minutes=55), end
+                        for ex in svc.exercises(s, w.id):
+                            for row in svc.session_sets(s, current.id, ex.id):
+                                row.done = True
+                                s.add(row)
+                    s.add(current)
+            for i, (meal, name, qty, kcal, p, c, f, src) in enumerate(FOOD):
+                captured = datetime.combine(day, time(12), ZoneInfo(u.timezone)).astimezone(timezone.utc)
+                upsert(FoodLog, "food:"+str(i), date=day.isoformat(), captured_at=captured, meal=meal,
+                       name=name, quantity=qty, kcal=kcal, protein_g=p, carbs_g=c, fat_g=f,
+                       source="synthetic", nutrition_provenance="synthetic", is_estimate=True)
+            upsert(Goal, "strength_goal", title="Bench press 100 kg (synthetic)", kind="strength",
+                   unit="kg", start_value=85, current_value=95, target_value=100)
+            upsert(Goal, "body_goal", title="Reach 72 kg (synthetic)", kind="body", unit="kg",
+                   start_value=76.8, current_value=74.6, target_value=72)
+            upsert(Goal, "protein_goal", title="160 g protein daily (synthetic)", kind="nutrition",
+                   unit="g", target_value=160, progress_source="daily_protein")
+            upsert(Goal, "frequency_goal", title="Train 4× a week (synthetic)", kind="habit",
+                   unit="sessions", target_value=4, progress_source="weekly_sessions")
+            upsert(ChatMessage, "welcome", role="assistant",
+                   content="This profile and initial records are synthetic demo data. Tell me what you ate or want to train.")
 
 if __name__ == "__main__":
-    seed(fresh="--fresh" in sys.argv)
-    print("seeded")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--fresh", action="store_true", help="Create an empty profile only if absent; never clear existing data")
+    args = parser.parse_args()
+    try:
+        seed(fresh=args.fresh)
+    except (SQLAlchemyError, RuntimeError):
+        raise SystemExit("Seed failed. Check server configuration and apply migrations; details are not printed.") from None
+    print("Synthetic demo seed upsert complete; existing records preserved.")

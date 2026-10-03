@@ -1,0 +1,31 @@
+{
+  "reply": "The suggested vegetarian plan is pending your approval.",
+  "cards": [
+    {
+      "type": "diet_plan",
+      "data": {
+        "id": 1,
+        "name": "Vegetarian day",
+        "kcal": 2000,
+        "meals": [
+          {
+            "meal": "dinner",
+            "name": "Tofu rice bowl",
+            "kcal": 650,
+            "protein_g": 35,
+            "carbs_g": 80,
+            "fat_g": 20
+          }
+        ],
+        "created_at": "2026-10-03T16:00:00+00:00",
+        "status": "pending"
+      },
+      "id": "b0a348d2-fbf2-43ca-a4b7-f59b8b83a21b",
+      "status": "pending",
+      "action": {
+        "method": "POST",
+        "path": "/cards/b0a348d2-fbf2-43ca-a4b7-f59b8b83a21b/apply"
+      }
+    }
+  ]
+}

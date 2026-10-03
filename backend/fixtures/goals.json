@@ -1,0 +1,14 @@
+[
+  {
+    "id": 5,
+    "title": "Train three times weekly",
+    "kind": "habit",
+    "unit": "sessions",
+    "start_value": 0,
+    "current_value": 2,
+    "target_value": 3,
+    "deadline": null,
+    "status": "active",
+    "progress_source": "weekly_sessions"
+  }
+]

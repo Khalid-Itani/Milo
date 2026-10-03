@@ -1,0 +1,31 @@
+{
+  "date": "2026-10-03",
+  "meals": {
+    "breakfast": [
+      {
+        "id": 9,
+        "date": "2026-10-03",
+        "captured_at": "2026-10-03T12:00:00+00:00",
+        "meal": "breakfast",
+        "name": "Two eggs and toast",
+        "quantity": "2 eggs, 2 slices",
+        "kcal": 320,
+        "protein_g": 18,
+        "carbs_g": 30,
+        "fat_g": 14,
+        "source": "coach",
+        "nutrition_provenance": "coach_estimate",
+        "is_estimate": true
+      }
+    ],
+    "lunch": [],
+    "dinner": [],
+    "snack": []
+  },
+  "totals": {
+    "kcal": 320,
+    "protein_g": 18,
+    "carbs_g": 30,
+    "fat_g": 14
+  }
+}

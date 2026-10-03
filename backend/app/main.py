@@ -1,170 +1,202 @@
-import logging
-from datetime import date as Date, datetime
+"""Authenticated legacy API plus additive sessions, proposals and scans."""
+import secrets
+from contextlib import asynccontextmanager
+from datetime import date as Date
+from typing import Annotated
+from uuid import UUID, uuid4
 
-from fastapi import Depends, FastAPI, HTTPException
-from sqlmodel import Session, select
+from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from sqlalchemy.exc import SQLAlchemyError
 
 from agent import coach
-from app.bmi import compute_bmi
-from app.db import get_session, init_db
-from app.models import ChatMessage, DietPlan, Exercise, FoodLog, Goal, User, Workout, WorkoutSet
-from app.schemas import ChatIn, GoalPatch, ProfileIn, SetIn, SetPatch, workout_out
-from app.today import build_today, food_totals
+from app import db, services as svc, schemas as sh
+from app.config import settings
+from app.idempotency import digest, mutate, claim, release
+from app.models import ChatMessage, DietPlan, Goal, Workout, WorkoutSession, Proposal, FoodLog
+from app.today import build_today
+from app.visualize import mint_session, SessionToken
 
-logging.basicConfig(level=logging.INFO)
-app = FastAPI(title="FitCoach")
-init_db()
-
-MEALS = ("breakfast", "lunch", "dinner", "snack")
-
-
-def today_str() -> str:
-    return Date.today().isoformat()
+@asynccontextmanager
+async def lifespan(app):
+    try:
+        yield
+    finally:
+        db.close_engine()
 
 
-def get_or_404(s: Session, model, id: int):
-    obj = s.get(model, id)
-    if not obj:
-        raise HTTPException(404, f"{model.__name__} {id} not found")
-    return obj
+app = FastAPI(title="Milo", version="2.0.0", lifespan=lifespan)
+app.state.session_factory = db.session_factory
+bearer = HTTPBearer(auto_error=False)
 
+def authorize(credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer)]):
+    if not settings.demo_api_token:
+        raise HTTPException(503, "demo_access_not_configured")
+    if (credentials is None or credentials.scheme.lower() != "bearer" or
+            not secrets.compare_digest(credentials.credentials.encode(), settings.demo_api_token.encode())):
+        raise HTTPException(401, "Unauthorized", headers={"WWW-Authenticate": "Bearer"})
 
-def save(s: Session, obj):
-    s.add(obj)
-    s.commit()
-    s.refresh(obj)
-    return obj
+api = APIRouter(dependencies=[Depends(authorize)])
+Key = Annotated[str | None, Header(alias="Idempotency-Key", min_length=1, max_length=200)]
 
+def factory():
+    return app.state.session_factory
 
-def user(s: Session) -> User:
-    return s.get(User, 1) or save(s, User(id=1))
+def write(request, key, body, operation):
+    fingerprint = digest({"method": request.method, "path": request.url.path, "body": body})
+    return mutate(factory(), key, fingerprint, operation)
 
+def read(operation):
+    with factory()() as s:
+        return operation(s)
 
-@app.get("/health")
+@app.exception_handler(RequestValidationError)
+async def validation_error(request, exc):
+    return JSONResponse(status_code=422, content={"detail": "validation_error",
+        "errors": [{"loc": list(e["loc"]), "type": e["type"]} for e in exc.errors()]})
+
+@app.exception_handler(SQLAlchemyError)
+async def database_error(request, exc):
+    return JSONResponse(status_code=503, content={"detail": "database_unavailable"})
+
+@app.exception_handler(RuntimeError)
+async def configuration_error(request, exc):
+    return JSONResponse(status_code=503, content={"detail": "service_unavailable"})
+
+@app.get("/health", response_model=sh.OK)
 def health():
     return {"ok": True}
 
+@api.get("/profile", response_model=sh.UserOut)
+def get_profile():
+    return read(lambda s: svc.public(svc.profile(s)))
 
-@app.get("/profile")
-def get_profile(s: Session = Depends(get_session)):
-    return user(s)
+@api.post("/profile", response_model=sh.UserOut)
+def post_profile(body: sh.ProfileIn, request: Request, key: Key = None):
+    return write(request, key, body.model_dump(mode="json"), lambda s: svc.save_profile(s, body))
 
+@api.get("/today", response_model=sh.TodayOut)
+def today(date: Date | None = None):
+    return read(lambda s: build_today(s, date))
 
-@app.post("/profile")
-async def post_profile(body: ProfileIn, s: Session = Depends(get_session)):
-    u = user(s)
-    for k, v in body.model_dump().items():
-        setattr(u, k, v)
-    u.bmi, u.bmi_category, _ = await compute_bmi(body.height_cm, body.weight_kg)
-    # Mifflin-St Jeor × 1.55 (moderately active)
-    bmr = 10 * body.weight_kg + 6.25 * body.height_cm - 5 * body.age + (5 if body.sex == "male" else -161)
-    u.kcal_target = round(bmr * 1.55)
-    u.protein_g = round(2.2 * body.weight_kg)
-    u.fat_g = round(u.kcal_target * 0.25 / 9)
-    u.carbs_g = round((u.kcal_target - u.protein_g * 4 - u.fat_g * 9) / 4)
-    return save(s, u)
+@api.post("/chat", response_model=sh.ChatOut, response_model_exclude_none=True)
+def chat(body: sh.ChatIn, request: Request, key: Key = None):
+    # request_id is also a replay key. Unkeyed legacy calls get a unique run.
+    key = key or (str(body.request_id) if body.request_id else "unkeyed:"+str(uuid4()))
+    fingerprint = digest({"method": "POST", "path": "/chat", "body": body.model_dump(mode="json")})
+    id, lease, result = claim(factory(), key, fingerprint)
+    if lease is None:
+        return result
+    try:
+        return coach.run(factory(), body, id, lease)
+    except Exception:
+        release(factory(), id, lease)
+        raise
 
+@api.get("/chat/history", response_model=list[sh.ChatMessageOut], response_model_exclude_none=True)
+def chat_history(conversation_id: UUID | None = None):
+    def load(s):
+        q = svc.owned(ChatMessage)
+        if conversation_id:
+            q = q.where(ChatMessage.conversation_id == str(conversation_id))
+        return [svc.public(r) for r in s.exec(q.order_by(ChatMessage.id)).all()]
+    return read(load)
 
-@app.get("/today")
-def today(s: Session = Depends(get_session)):
-    user(s)
-    return build_today(s)
+@api.get("/workouts", response_model=list[sh.WorkoutOut])
+def workouts(include_archived: bool = False):
+    return read(lambda s: svc.list_workouts(s, include_archived))
 
+@api.get("/workouts/{id}", response_model=sh.WorkoutOut)
+def workout(id: int):
+    return read(lambda s: svc.workout_out(s, svc.get(s, Workout, id)))
 
-@app.post("/chat")
-def chat(body: ChatIn, s: Session = Depends(get_session)):
-    user(s)
-    return coach.run(s, body.message)
+@api.post("/workouts/{id}/start", response_model=sh.WorkoutOut)
+def start_workout(id: int, request: Request, key: Key = None):
+    return write(request, key, {}, lambda s: svc.start_workout(s, id))
 
+@api.post("/workouts/{id}/finish", response_model=sh.WorkoutOut)
+def finish_workout(id: int, request: Request, key: Key = None):
+    return write(request, key, {}, lambda s: svc.finish_workout(s, id))
 
-@app.get("/chat/history")
-def chat_history(s: Session = Depends(get_session)):
-    return s.exec(select(ChatMessage).order_by(ChatMessage.id)).all()
+@api.post("/exercises/{id}/sets", response_model=sh.SetOut)
+def add_set(id: int, body: sh.SetIn, request: Request, key: Key = None):
+    return write(request, key, body.model_dump(), lambda s: svc.add_set(s, id, body))
 
+@api.patch("/sets/{id}", response_model=sh.SetOut)
+def patch_set(id: int, body: sh.SetPatch, request: Request, key: Key = None):
+    return write(request, key, body.model_dump(), lambda s: svc.patch_set(s, id, body))
 
-@app.get("/workouts")
-def workouts(s: Session = Depends(get_session)):
-    return [workout_out(s, w) for w in s.exec(select(Workout).order_by(Workout.id)).all()]
+@api.get("/food", response_model=sh.FoodDayOut)
+def food(date: Date | None = None):
+    return read(lambda s: svc.food_day(s, date))
 
+@api.post("/food", response_model=sh.FoodOut)
+def add_food(body: sh.FoodIn, request: Request, key: Key = None):
+    return write(request, key, body.model_dump(mode="json"), lambda s: svc.add_food(s, body))
 
-@app.get("/workouts/{id}")
-def workout(id: int, s: Session = Depends(get_session)):
-    return workout_out(s, get_or_404(s, Workout, id))
+@api.delete("/food/{id}", response_model=sh.OK)
+def delete_food(id: int, request: Request, key: Key = None):
+    def delete(s):
+        s.delete(svc.get(s, FoodLog, id))
+        return {"ok": True}
+    return write(request, key, {}, delete)
 
+@api.get("/diet-plans", response_model=list[sh.DietOut])
+def diet_plans(include_archived: bool = False):
+    return read(lambda s: [svc.public(r) for r in s.exec(svc.owned(DietPlan).where(
+        DietPlan.status.in_(("active", "archived") if include_archived else ("active",))).order_by(DietPlan.id.desc())).all()])
 
-@app.post("/workouts/{id}/start")
-def start_workout(id: int, s: Session = Depends(get_session)):
-    w = get_or_404(s, Workout, id)
-    w.status, w.started_at = "active", datetime.now()
-    return workout_out(s, save(s, w))
+@api.get("/goals", response_model=list[sh.GoalOut])
+def goals():
+    return read(lambda s: [svc.goal_out(s, g) for g in s.exec(svc.owned(Goal).order_by(Goal.id)).all()])
 
+@api.post("/goals", response_model=sh.GoalOut)
+def add_goal(body: sh.GoalIn, request: Request, key: Key = None):
+    return write(request, key, body.model_dump(mode="json"), lambda s: svc.add_goal(s, body))
 
-@app.post("/workouts/{id}/finish")
-def finish_workout(id: int, s: Session = Depends(get_session)):
-    w = get_or_404(s, Workout, id)
-    w.status, w.finished_at = "done", datetime.now()
-    w.started_at = w.started_at or w.finished_at
-    return workout_out(s, save(s, w))
+@api.patch("/goals/{id}", response_model=sh.GoalOut)
+def patch_goal(id: int, body: sh.GoalPatch, request: Request, key: Key = None):
+    return write(request, key, body.model_dump(), lambda s: svc.patch_goal(s, id, body))
 
+@api.post("/cards/{id}/apply", response_model=sh.Card, response_model_exclude_none=True)
+def apply_card(id: UUID, request: Request, key: Key = None):
+    return write(request, key, {}, lambda s: svc.apply_proposal(s, str(id)))
 
-@app.post("/exercises/{id}/sets")
-def add_set(id: int, body: SetIn, s: Session = Depends(get_session)):
-    get_or_404(s, Exercise, id)
-    n = len(s.exec(select(WorkoutSet).where(WorkoutSet.exercise_id == id)).all())
-    return save(s, WorkoutSet(exercise_id=id, set_index=n, **body.model_dump()))
+@api.get("/cards", response_model=list[sh.Card], response_model_exclude_none=True)
+def pending_cards():
+    return read(lambda s: [{k: v for k, v in r.card.items() if k != "replaces_plan_id"}
+        for r in s.exec(svc.owned(Proposal).where(Proposal.status == "pending").order_by(Proposal.created_at, Proposal.id)).all()])
 
+@api.get("/sessions", response_model=list[sh.SessionOut])
+def session_history(workout_id: int | None = None):
+    def load(s):
+        q = svc.owned(WorkoutSession).where(WorkoutSession.status == "completed")
+        if workout_id is not None:
+            svc.get(s, Workout, workout_id)
+            q = q.where(WorkoutSession.workout_id == workout_id)
+        return [svc.public(r) for r in s.exec(q.order_by(WorkoutSession.finished_at.desc(), WorkoutSession.id.desc())).all()]
+    return read(load)
 
-@app.patch("/sets/{id}")
-def patch_set(id: int, body: SetPatch, s: Session = Depends(get_session)):
-    ws = get_or_404(s, WorkoutSet, id)
-    for k, v in body.model_dump(exclude_none=True).items():
-        setattr(ws, k, v)
-    return save(s, ws)
+@api.get("/sessions/{id}", response_model=sh.WorkoutOut)
+def session_detail(id: int):
+    def load(s):
+        current = svc.get(s, WorkoutSession, id)
+        return svc.workout_out(s, svc.get(s, Workout, current.workout_id), current)
+    return read(load)
 
+@api.post("/visualize/session", response_model=SessionToken)
+def visualize_session():
+    # Fresh per SDK preparation. Tokens are deliberately never persisted/replayed.
+    return JSONResponse(content=mint_session(), headers={"Cache-Control": "no-store"})
 
-@app.get("/food")
-def food(date: str | None = None, s: Session = Depends(get_session)):
-    date = date or today_str()
-    items = s.exec(select(FoodLog).where(FoodLog.date == date).order_by(FoodLog.id)).all()
-    return {
-        "date": date,
-        "meals": {m: [f for f in items if f.meal == m] for m in MEALS},
-        "totals": food_totals(s, date),
-    }
+@api.post("/scans", response_model=sh.ScanOut)
+def ingest_scan(body: sh.ScanIn, request: Request, key: Key = None):
+    return write(request, key, body.model_dump(mode="json"), lambda s: svc.ingest_scan(s, body, digest(body.model_dump(mode="json"))))
 
+@api.get("/scans", response_model=list[sh.ScanOut])
+def scans():
+    return read(lambda s: svc.scans(s))
 
-@app.post("/food")
-def add_food(body: FoodLog, s: Session = Depends(get_session)):
-    body.id = None
-    return save(s, FoodLog.model_validate(body.model_dump(warnings=False)))
-
-
-@app.delete("/food/{id}")
-def delete_food(id: int, s: Session = Depends(get_session)):
-    s.delete(get_or_404(s, FoodLog, id))
-    s.commit()
-    return {"ok": True}
-
-
-@app.get("/diet-plans")
-def diet_plans(s: Session = Depends(get_session)):
-    return s.exec(select(DietPlan).order_by(DietPlan.id.desc())).all()
-
-
-@app.get("/goals")
-def goals(s: Session = Depends(get_session)):
-    return s.exec(select(Goal).order_by(Goal.id)).all()
-
-
-@app.post("/goals")
-def add_goal(body: Goal, s: Session = Depends(get_session)):
-    body.id = None
-    return save(s, Goal.model_validate(body.model_dump(warnings=False)))
-
-
-@app.patch("/goals/{id}")
-def patch_goal(id: int, body: GoalPatch, s: Session = Depends(get_session)):
-    g = get_or_404(s, Goal, id)
-    for k, v in body.model_dump(exclude_none=True).items():
-        setattr(g, k, v)
-    return save(s, g)
+app.include_router(api)
