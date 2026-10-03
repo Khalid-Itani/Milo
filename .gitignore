@@ -6,6 +6,4 @@ __pycache__/
 .venv/
 .pytest_cache/
 verification-results/
-.recovery-tests/
-/prepared-checkout/
 **/tools/cloudflared.exe

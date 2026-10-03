@@ -1,7 +1,7 @@
 # Milo team handoff
 
 Recorded 2026-10-03. Backend source and offline checks are ready; live app/phone testing
-still needs the setup below. Working branch: backend/supabase-agent in prepared-checkout.
+still needs the setup below. Work from the main Milo repository folder.
 [PR #1](https://github.com/Khalid-Itani/Milo/pull/1) records checks/publication/merge state.
 No hosted application deployment was performed.
 
@@ -32,7 +32,7 @@ records are labeled synthetic and retained; no provider calls occurred.
 1. DATABASE_URL is now configured locally and verified. Direct Connect works with TLS on
    this machine; keep the existing ignored file. Revision 0001_milo is applied and the
    seed/write/read/restart check passed. No further database setup is required for this demo.
-2. Add Claude/Visualize keys to `prepared-checkout/backend/.env` when available, then restart
+2. Add Claude/Visualize keys to `backend/.env` when available, then restart
    the backend. This is the running checkout's configuration; run each live_providers.py separately.
    Claude checks tool behavior with two bounded paid calls. Confirm Visualize's session
    contract against the partner's account docs; the public SDK reference was unavailable.

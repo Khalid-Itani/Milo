@@ -1,8 +1,11 @@
 # Actual verification status
 
 Recorded 2026-10-03, Windows, Python 3.14.3. Working checkout:
-`C:/Users/kitan/Development/Milo/prepared-checkout`, branch `backend/supabase-agent`.
-The original workspace, venv, ignored credentials and SQLite files were preserved.
+`C:/Users/kitan/Development/Milo`. The repository history, partner files and completed
+backend work share this folder. The installed venv and ignored credentials were preserved.
+The temporary duplicate checkout and one-time recovery files were archived outside Milo
+after consolidation. Recovery history remains in Git; current setup uses backend/.env and
+backend/.venv directly.
 
 ## Passed
 
@@ -62,7 +65,7 @@ RLS/grant checks, and two real production-backend startup/shutdown cycles. A key
 write survived restart and returned the same FoodLog ID; profile/goals/sessions/history/cards
 also persisted. Synthetic verification goal 5 and food 9 remain for inspection. No providers
 were called. Runtime secrets are present only in ignored .env files. Add future provider keys
-to the running checkout's prepared-checkout/backend/.env and restart the backend after edits.
+to backend/.env and restart the backend after edits.
 
 ## Not run / external setup
 
@@ -94,19 +97,18 @@ records checks and the merge outcome. GitHub connector PR creation returned 403;
 the existing authenticated Git Credential Manager identity successfully created it via the
 GitHub REST API. Credentials were held only in memory and never printed or written.
 
-One third-party Starlette/AnyIO deprecation warning is nonfatal. Ignored logs/summary.json
-in backend/verification-results retain local evidence. GitHub CI runs Linux/Python 3.12
+One third-party Starlette/AnyIO deprecation warning is nonfatal. The offline runner writes
+ignored logs/summary.json in backend/verification-results. GitHub CI runs Linux/Python 3.12
 and Windows/Python 3.14 without credentials, hosted calls or deployment. GitHub's PR/check
 state records the publication/merge outcome.
 
-## Exact commands in this recovered checkout
+## Exact commands in the Milo checkout
 
 ```powershell
-Set-Location C:/Users/kitan/Development/Milo/prepared-checkout/backend
-$miloPython = (Resolve-Path ../../backend/.venv/Scripts/python.exe).Path
+Set-Location C:/Users/kitan/Development/Milo/backend
+$miloPython = (Resolve-Path .venv/Scripts/python.exe).Path
 & $miloPython scripts/verify_offline.py
-# Fill the original backend/.env locally, then copy only if absent here:
-if (-not (Test-Path -LiteralPath .env)) { Copy-Item -LiteralPath ../../backend/.env -Destination .env }
+# Fill this backend/.env locally; preserve the existing DATABASE_URL and demo token.
 & $miloPython -m alembic current
 & $miloPython -m alembic upgrade head
 & $miloPython -m app.seed
