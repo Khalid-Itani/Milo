@@ -61,7 +61,8 @@ unchanged profile/owner row counts, a synthetic goal write/read across reconnect
 RLS/grant checks, and two real production-backend startup/shutdown cycles. A keyed food
 write survived restart and returned the same FoodLog ID; profile/goals/sessions/history/cards
 also persisted. Synthetic verification goal 5 and food 9 remain for inspection. No providers
-were called. Runtime secrets are present only in ignored .env files.
+were called. Runtime secrets are present only in ignored .env files. Add future provider keys
+to the running checkout's prepared-checkout/backend/.env and restart the backend after edits.
 
 ## Not run / external setup
 

@@ -9,7 +9,8 @@ It retains history from main `81f50574507424bf7d504ed04bf6b554d5a894e1` and uses
 `backend/supabase-agent`. prepare_checkout.ps1 verified upstream backend/doc blob hashes
 before overlaying existing implementation. No overlapping upstream changes were present.
 Partner-owned ios/, design/ and SPEC.md came from GitHub unchanged. No reset/force-push.
-The original directory, venv, SQLite files and ignored secrets remain intact.
+The original directory, venv, SQLite files and ignored secrets remain intact. Completed source
+and docs are also synchronized back there; use prepared-checkout for Git operations.
 
 Use the recovered directory for Git commands. Its backend can reuse the original venv:
 
