@@ -69,7 +69,6 @@ were called. Runtime secrets are present only in ignored .env files.
 |---|---|
 | Live Claude model/tool round trip | ANTHROPIC_API_KEY blank; live_providers.py claude makes two bounded paid calls when configured |
 | Live Visualize session | VISUALIZE_SECRET_KEY blank; request/error behavior tested with HTTP mocks only |
-| HTTPS tunnel / phone API access | Tunnel verification is recorded below; physical phone testing remains partner work |
 | SDK ScanResult mapping / physical scan | Partner-owned Mac/real-iPhone work, never claimed on Windows |
 | Deployment | Not requested or performed; workflow only verifies offline code |
 
@@ -78,6 +77,21 @@ The existing configured /v1/sessions + host_user_ref contract has mock coverage;
 with the partner's account/SDK documentation and a real session before demo. Claude Sonnet
 5.5's model ID was verified in [official model docs](https://platform.claude.com/docs/en/models/overview);
 account availability remains an unrun live check.
+
+## HTTPS and publication
+
+Downloaded cloudflared 2026.9.3 from Cloudflare's official GitHub release to ignored
+backend/tools/cloudflared.exe. Started a real Quick Tunnel to the running Supabase-backed
+uvicorn server. HTTPS /health returned ok; unauthenticated /profile returned 401;
+an authenticated HTTPS /profile read returned the fixed owner's persisted profile.
+The temporary URL/demo token remain outside Git and can be shared privately.
+No physical phone access or scan was claimed. A Quick Tunnel is temporary dev access;
+no hosted application deployment or Cloudflare account purchase was performed.
+
+Branch backend/supabase-agent was pushed normally. [PR #1](https://github.com/Khalid-Itani/Milo/pull/1)
+records checks and the merge outcome. GitHub connector PR creation returned 403;
+the existing authenticated Git Credential Manager identity successfully created it via the
+GitHub REST API. Credentials were held only in memory and never printed or written.
 
 One third-party Starlette/AnyIO deprecation warning is nonfatal. Ignored logs/summary.json
 in backend/verification-results retain local evidence. GitHub CI runs Linux/Python 3.12

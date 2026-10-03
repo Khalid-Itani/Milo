@@ -121,8 +121,9 @@ A real iPhone cannot reach Windows localhost. Follow the documented Cloudflare Q
 in backend/README.md, use its HTTPS URL in Config.baseURL, and confirm /health from the phone.
 The tunnel process and backend must stay running; a Quick Tunnel URL can change on restart.
 No broad App Transport Security exception is required for HTTPS.
-Tunnel instructions were checked against Cloudflare documentation; a live tunnel remains
-pending backend DATABASE_URL configuration. Actual iPhone scan testing belongs on your Mac/device.
+The real tunnel passed HTTPS health and authenticated Supabase profile read from Windows.
+The temporary URL/demo token are shared privately, outside Git. Physical phone access and
+actual iPhone scan testing still belong on your Mac/device.
 
 Use backend/fixtures as decoder examples and API_CONTRACT.md for errors/retry behavior.
 Fixtures validate against runtime FastAPI/Pydantic output. The full offline suite passed

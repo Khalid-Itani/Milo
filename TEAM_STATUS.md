@@ -2,7 +2,8 @@
 
 Recorded 2026-10-03. Backend source and offline checks are ready; live app/phone testing
 still needs the setup below. Working branch: backend/supabase-agent in prepared-checkout.
-GitHub's PR/check state records publication and merging. No deployment was performed.
+[PR #1](https://github.com/Khalid-Itani/Milo/pull/1) records checks/publication/merge state.
+No hosted application deployment was performed.
 
 ## Backend delivered and verified
 
@@ -34,9 +35,9 @@ records are labeled synthetic and retained; no provider calls occurred.
 2. Add Claude/Visualize server keys when available; run each live_providers.py check separately.
    Claude checks tool behavior with two bounded paid calls. Confirm Visualize's session
    contract against the partner's account docs; the public SDK reference was unavailable.
-3. Start the documented HTTPS tunnel,
-   verify /health and authenticated /profile, and privately share URL/demo token.
-   Keep backend/tunnel running for phone checks; rotate demo token afterward.
+3. The real HTTPS Quick Tunnel passed /health, unauthorized rejection and authenticated
+   Supabase profile read. Keep backend/tunnel running for phone checks and privately share
+   URL/demo token. If restarted, use the new URL; rotate the demo token afterward.
 
 ## Teammate: iOS, SDK and real device
 

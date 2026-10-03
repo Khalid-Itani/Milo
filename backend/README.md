@@ -140,7 +140,8 @@ Invoke-RestMethod "$httpsBase/profile" -Headers @{ Authorization = "Bearer $env:
 ```
 
 This command is verified against [Quick Tunnel documentation](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/).
-A live tunnel was not run here. The URL changes each launch, and both tunnel/server must keep running.
+A live tunnel passed HTTPS health and authenticated Supabase profile read here. Its temporary
+URL/demo token stay outside Git. The URL changes each launch; both tunnel/server must keep running.
 Use the HTTPS URL in the phone's configurable base URL; no broad iOS security exception is required.
 Do not enable interactive email protection on this API tunnel: URLSession is a non-interactive client.
 Quick Tunnels are temporary development access with no uptime guarantee.

@@ -60,7 +60,9 @@ passed offline. CI runs verification only, without credentials or deployment.
 The schema was applied to your confirmed Milo Supabase project; all 15 tables use RLS and
 deny client access. The local Connect-dialog DATABASE_URL is configured, and the actual
 Supabase seed/write/read/backend-restart checks passed. Claude/Visualize keys and real-phone
-checks remain external setup. No physical scan was claimed.
+checks remain external setup. The real HTTPS tunnel passed health/authenticated profile
+checks from Windows. [PR #1](https://github.com/Khalid-Itani/Milo/pull/1) records publication
+and checks. No physical scan was claimed.
 
 The offline suite covers three-day dumbbell plans, vegetarian plans without consumed calories,
 keyed eggs/toast logging, bench sets in repeat sessions, and frequency goals from completed
