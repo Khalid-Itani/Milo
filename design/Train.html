@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Train — active workout</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap">
+<style>
+body{margin:0}
+a{color:inherit}a:hover{color:inherit}
+button{font:inherit;cursor:pointer}
+input{font:inherit}
+input::placeholder{color:#8A8F98}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden; background: #F5F5F2; color: #111214; font-family: 'Geist', -apple-system, 'SF Pro Text', system-ui, sans-serif; box-sizing: border-box">
+
+<div style="padding: 58px 16px 100px; display: flex; flex-direction: column; gap: 12px">
+
+<div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 0 4px">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="font-size: 13px; font-weight: 500; color: #5E636C">Started 6:32 PM</div>
+<h1 style="margin: 0; font-size: 26px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1">Upper B — Volume</h1>
+</div>
+<button style="flex-shrink: 0; height: 44px; padding: 0 18px; border-radius: 22px; border: none; background: #F25C1F; color: #111214; font-size: 14px; font-weight: 600">Finish</button>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); background: #FFFFFF; border-radius: 18px; padding: 12px 4px">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 2px"><div style="font-size: 11.5px; color: #5E636C; font-weight: 500">Duration</div><div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 18px; font-weight: 600">32:14</div></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 2px; border-left: 1px solid #F0EFEC; border-right: 1px solid #F0EFEC"><div style="font-size: 11.5px; color: #5E636C; font-weight: 500">Volume</div><div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 18px; font-weight: 600">3,205 kg</div></div>
+<div style="display: flex; flex-direction: column; align-items: center; gap: 2px"><div style="font-size: 11.5px; color: #5E636C; font-weight: 500">Sets</div><div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 18px; font-weight: 600">8</div></div>
+</div>
+
+<div style="display: flex; align-items: center; gap: 10px; padding: 8px 8px 8px 14px; border-radius: 18px; background: #111214; color: #FFFFFF">
+<div style="flex: 1; display: flex; flex-direction: column; gap: 6px">
+<div style="display: flex; align-items: baseline; gap: 8px"><span style="font-size: 12.5px; color: #C9CBD0">Rest</span><span style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 17px; font-weight: 600">1:24</span></div>
+<div style="height: 4px; border-radius: 2px; background: #33353A"><div style="width: 47%; height: 4px; border-radius: 2px; background: #F25C1F"></div></div>
+</div>
+<button style="height: 44px; padding: 0 12px; border-radius: 14px; border: none; background: #26282D; color: #FFFFFF; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; font-weight: 600">−15</button>
+<button style="height: 44px; padding: 0 12px; border-radius: 14px; border: none; background: #26282D; color: #FFFFFF; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 13px; font-weight: 600">+15</button>
+<button style="height: 44px; padding: 0 14px; border-radius: 14px; border: none; background: #FFFFFF; color: #111214; font-size: 13px; font-weight: 600">Skip</button>
+</div>
+
+<section aria-label="Bench press" style="background: #FFFFFF; border-radius: 20px; padding: 14px 12px 8px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px">
+<div style="font-size: 16px; font-weight: 600">Bench Press <span style="font-weight: 500; color: #5E636C">(Barbell)</span></div>
+<button aria-label="Exercise options" style="width: 36px; height: 36px; border: none; background: transparent; color: #5E636C; display: flex; align-items: center; justify-content: center; margin-right: -6px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
+</button>
+</div>
+<div style="display: flex; align-items: center; gap: 8px; margin: 0 4px; padding: 8px 10px; border-radius: 12px; background: #F7F5F2; font-size: 12.5px; line-height: 1.35; color: #3A3D43">
+<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink: 0"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path></svg>
+<span>Up 2.5 kg from last Saturday. Est. 1RM now 95 kg.</span>
+</div>
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) 64px 54px 44px; gap: 6px; padding: 4px 4px 0; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: #5E636C">
+<div style="text-align: center">SET</div><div>PREVIOUS</div><div style="text-align: center">KG</div><div style="text-align: center">REPS</div><div></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) 64px 54px 44px; gap: 6px; align-items: center; height: 40px; padding: 0 4px; border-radius: 10px; background: #FFF1EA; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px">
+<div style="text-align: center; font-weight: 600; color: #B4430F">W</div><div style="color: #5E636C; font-size: 13px">40 × 10</div><div style="text-align: center; font-weight: 600">40</div><div style="text-align: center; font-weight: 600">10</div>
+<button aria-label="Set complete" style="width: 32px; height: 32px; justify-self: center; border-radius: 9px; border: none; background: #F25C1F; color: #111214; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) 64px 54px 44px; gap: 6px; align-items: center; height: 40px; padding: 0 4px; border-radius: 10px; background: #FFF1EA; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px">
+<div style="text-align: center; font-weight: 600">1</div><div style="color: #5E636C; font-size: 13px">72.5 × 8</div><div style="text-align: center; font-weight: 600">75</div><div style="text-align: center; font-weight: 600">8</div>
+<button aria-label="Set complete" style="width: 32px; height: 32px; justify-self: center; border-radius: 9px; border: none; background: #F25C1F; color: #111214; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) 64px 54px 44px; gap: 6px; align-items: center; height: 40px; padding: 0 4px; border-radius: 10px; background: #FFF1EA; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px">
+<div style="text-align: center; font-weight: 600">2</div><div style="color: #5E636C; font-size: 13px">72.5 × 8</div><div style="text-align: center; font-weight: 600">75</div><div style="text-align: center; font-weight: 600">8</div>
+<button aria-label="Set complete" style="width: 32px; height: 32px; justify-self: center; border-radius: 9px; border: none; background: #F25C1F; color: #111214; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) 64px 54px 44px; gap: 6px; align-items: center; height: 40px; padding: 0 4px; border-radius: 10px; background: #FFF1EA; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px">
+<div style="text-align: center; font-weight: 600">3</div><div style="color: #5E636C; font-size: 13px">72.5 × 7</div><div style="text-align: center; font-weight: 600">75</div><div style="text-align: center; font-weight: 600">7</div>
+<button aria-label="Set complete" style="width: 32px; height: 32px; justify-self: center; border-radius: 9px; border: none; background: #F25C1F; color: #111214; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+</div>
+</div>
+</section>
+
+<section aria-label="Incline dumbbell press" style="background: #FFFFFF; border-radius: 20px; padding: 0 16px; height: 56px; display: flex; align-items: center; gap: 10px">
+<div style="width: 22px; height: 22px; border-radius: 11px; background: #F25C1F; color: #111214; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></div>
+<div style="flex: 1; font-size: 15px; font-weight: 600">Incline DB Press</div>
+<div style="font-family: 'Geist Mono', ui-monospace, monospace; font-size: 12.5px; color: #5E636C">3 sets · 870 kg</div>
+</section>
+
+<section aria-label="Cable fly" style="background: #FFFFFF; border-radius: 20px; padding: 14px 12px 10px; display: flex; flex-direction: column; gap: 8px">
+<div style="display: flex; align-items: center; justify-content: space-between; padding: 0 4px">
+<div style="font-size: 16px; font-weight: 600">Cable Fly</div>
+<button aria-label="Exercise options" style="width: 36px; height: 36px; border: none; background: transparent; color: #5E636C; display: flex; align-items: center; justify-content: center; margin-right: -6px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.8"></circle><circle cx="12" cy="12" r="1.8"></circle><circle cx="19" cy="12" r="1.8"></circle></svg>
+</button>
+</div>
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) 64px 54px 44px; gap: 6px; padding: 0 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.04em; color: #5E636C">
+<div style="text-align: center">SET</div><div>PREVIOUS</div><div style="text-align: center">KG</div><div style="text-align: center">REPS</div><div></div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 2px">
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) 64px 54px 44px; gap: 6px; align-items: center; height: 40px; padding: 0 4px; border-radius: 10px; background: #FFF1EA; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px">
+<div style="text-align: center; font-weight: 600">1</div><div style="color: #5E636C; font-size: 13px">17.5 × 12</div><div style="text-align: center; font-weight: 600">17.5</div><div style="text-align: center; font-weight: 600">12</div>
+<button aria-label="Set complete" style="width: 32px; height: 32px; justify-self: center; border-radius: 9px; border: none; background: #F25C1F; color: #111214; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) 64px 54px 44px; gap: 6px; align-items: center; height: 44px; padding: 0 4px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px">
+<div style="text-align: center; font-weight: 600">2</div><div style="color: #5E636C; font-size: 13px">17.5 × 12</div>
+<input aria-label="Set 2 weight in kg" inputmode="decimal" placeholder="17.5" style="width: 100%; height: 34px; box-sizing: border-box; border-radius: 9px; border: 1.5px solid #111214; background: #FFFFFF; text-align: center; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; font-weight: 600; outline: none">
+<input aria-label="Set 2 reps" inputmode="numeric" placeholder="12" style="width: 100%; height: 34px; box-sizing: border-box; border-radius: 9px; border: none; background: #F1F0ED; text-align: center; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; font-weight: 600; outline: none">
+<button aria-label="Mark set complete" style="width: 32px; height: 32px; justify-self: center; border-radius: 9px; border: 1.5px solid #CFCDC7; background: #FFFFFF; color: #A3A8B0; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+</div>
+<div style="display: grid; grid-template-columns: 36px minmax(0, 1fr) 64px 54px 44px; gap: 6px; align-items: center; height: 44px; padding: 0 4px; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px">
+<div style="text-align: center; font-weight: 600">3</div><div style="color: #5E636C; font-size: 13px">15 × 12</div>
+<input aria-label="Set 3 weight in kg" inputmode="decimal" placeholder="17.5" style="width: 100%; height: 34px; box-sizing: border-box; border-radius: 9px; border: none; background: #F1F0ED; text-align: center; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; font-weight: 600; outline: none">
+<input aria-label="Set 3 reps" inputmode="numeric" placeholder="12" style="width: 100%; height: 34px; box-sizing: border-box; border-radius: 9px; border: none; background: #F1F0ED; text-align: center; font-family: 'Geist Mono', ui-monospace, monospace; font-size: 14px; font-weight: 600; outline: none">
+<button aria-label="Mark set complete" style="width: 32px; height: 32px; justify-self: center; border-radius: 9px; border: 1.5px solid #CFCDC7; background: #FFFFFF; color: #A3A8B0; display: flex; align-items: center; justify-content: center"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg></button>
+</div>
+</div>
+<button style="height: 44px; border-radius: 12px; border: none; background: #F5F4F1; color: #111214; font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"></path></svg>Add set</button>
+</section>
+
+</div>
+
+<nav aria-label="Tabs" style="position: absolute; left: 0; right: 0; bottom: 0; height: 84px; box-sizing: border-box; padding: 6px 6px 26px; background: rgba(255,255,255,0.94); border-top: 1px solid #E4E3DF; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr))">
+<a href="Main.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: #6B7079; font-size: 10.5px; font-weight: 500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="3.5" width="7" height="7" rx="2"></rect><rect x="13.5" y="3.5" width="7" height="7" rx="2"></rect><rect x="3.5" y="13.5" width="7" height="7" rx="2"></rect><rect x="13.5" y="13.5" width="7" height="7" rx="2"></rect></svg>Today</a>
+<a href="Coach.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: #6B7079; font-size: 10.5px; font-weight: 500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-8l-5 4v-4H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2z"></path></svg>Coach</a>
+<a href="Train.dc.html" aria-current="page" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: #111214; font-size: 10.5px; font-weight: 600">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"></path></svg>Train</a>
+<a href="Eat.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: #6B7079; font-size: 10.5px; font-weight: 500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M7 3v18M4.5 3v5a2.5 2.5 0 0 0 5 0V3M17.5 21V3c-2.2 1.4-3.5 4.2-3.5 8h3.5"></path></svg>Eat</a>
+<a href="Goals.dc.html" style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; text-decoration: none; color: #6B7079; font-size: 10.5px; font-weight: 500">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"></circle><circle cx="12" cy="12" r="5"></circle><circle cx="12" cy="12" r="1"></circle></svg>Goals</a>
+</nav>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F25C1F"},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { accent: this.props.accent ?? '#F25C1F' };
+  }
+}
+</script>
+</body>
+</html>
