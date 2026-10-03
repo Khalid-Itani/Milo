@@ -15,9 +15,9 @@ code .
 ```
 
 For an existing checkout, inspect `git status --short` and branch first; preserve unrelated changes.
-Recovery succeeded into `prepared-checkout` on backend/supabase-agent, preserving history
-and partner files. [GIT_RECOVERY.md](../GIT_RECOVERY.md) gives this machine's commands using
-the original installed venv. Secrets/venv/SQLite files remain in the original workspace.
+The Milo folder is the working repository. It includes the partner's iOS/design files and
+the completed backend implementation. Use backend/.env and backend/.venv locally; an
+existing installed venv does not need to be recreated.
 
 ```powershell
 Set-Location backend

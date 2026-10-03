@@ -30,9 +30,9 @@ notepad .env
 
 [backend/README.md](backend/README.md) includes connection setup, explicit migrations,
 no-activation commands, smoke examples and HTTPS tunnel instructions. No schema/seed runs at
-import/startup. Git history was recovered safely into `prepared-checkout`; the original
-workspace, secrets and venv remain intact. [GIT_RECOVERY.md](GIT_RECOVERY.md) has this
-machine's exact commands. No deployment was performed.
+import/startup. The Milo folder contains the GitHub repository, your partner's iOS/design
+files and the completed backend work. Local secrets and the installed venv stay in backend/.
+No deployment was performed.
 
 ## 2. iOS
 
