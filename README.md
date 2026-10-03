@@ -1,27 +1,47 @@
-# FitCoach — hackathon starter
+# FitCoach
 
-1. Unzip into an empty folder named `fitcoach` and `git init`.
-2. Open Claude Code in that folder.
-3. Paste one of the prompts below.
-
-## One-shot (one person, whole app)
+A fitness app you drive by chatting with an AI coach. The Coach builds workout and diet plans, logs food and sets, and sets goals. The Today, Train, Eat and Goals tabs show what it saved. See `SPEC.md` for the full spec and `design/` for the mockups.
 
 ```
-Read SPEC.md and every file in design/ first. Then build the entire app exactly as specified: backend, agent and iOS, following the build order in section 5. Use the exact API shapes in section 2.2. Run the backend tests and the demo_chat.sh script before moving to iOS, and fix anything that fails. Leave the Visualize AI call as a clearly marked TODO with the BMI formula fallback working. Finish with a root README that explains how to run both halves.
+backend/   FastAPI + SQLite + Claude coach agent (backend/agent/)
+ios/       SwiftUI app (iOS 17, XcodeGen)
 ```
 
-## Split (two people, two Claude Code sessions)
+## 1. Backend
 
-Person B — backend + agent:
-```
-Read SPEC.md. Build only backend/ (sections 2 and 3, build-order steps 1–2). Use the exact API shapes in section 2.2. Seed the data in 2.4, run the tests, and write backend/scripts/demo_chat.sh covering the demo prompts in section 6.
+```bash
+cd backend
+cp .env.example .env            # add ANTHROPIC_API_KEY (COACH_MODEL defaults to claude-opus-5-5)
+python3 -m venv .venv && source .venv/bin/activate   # Python 3.11+
+pip install -r requirements.txt
+python -m app.seed              # mockup data; add --fresh to start with onboarding
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Person A — iOS:
-```
-Read SPEC.md and every file in design/. Build only ios/ (section 4, build-order steps 3–4). Match the mockups in design/ closely. Decode the exact JSON shapes in section 2.2. Until the backend is up, use a MockAPIClient that returns the seed values from section 2.4, behind a flag in Config.swift.
+Tests: `pytest -q`. API docs: http://localhost:8000/docs
+
+## 2. iOS
+
+```bash
+brew install xcodegen
+cd ios && xcodegen && open FitCoach.xcodeproj
 ```
 
-## Before you start
-- Put `ANTHROPIC_API_KEY`, `COACH_MODEL`, and (if you have them) `VISUALIZE_API_KEY` / `VISUALIZE_API_URL` in `backend/.env`.
-- `brew install xcodegen` on the iOS machine.
+Run on an iPhone simulator. For a real device, set `Config.baseURL` to your Mac's LAN IP. To run without a backend, set `Config.useMock = true`. See `ios/README.md`.
+
+## 3. Demo
+
+With the backend running, `backend/scripts/demo_chat.sh` sends the demo prompts from `SPEC.md` section 6. For the full on-device demo:
+
+1. Run `python -m app.seed --fresh`, launch the app and enter 180 cm / 74.6 kg. BMI 23.0 Normal appears on Today.
+2. Coach: "I train 4 days a week and want a 100 kg bench by December. Build me a plan." The plan shows up in Train.
+3. Coach: "Lunch was a chicken burrito bowl with guac". It appears under Lunch in Eat, and kcal left drops.
+4. Coach: "What should I eat for dinner?"
+5. Coach: "Set a goal: reach 72 kg by January 31". It appears in Goals.
+6. Train: open Upper B, Start, tick 3 sets, Finish. Today shows 4 of 4 sessions.
+
+## Known gaps
+
+- The Visualize AI request in `backend/app/bmi.py` is a placeholder (`TODO(visualize)`). BMI falls back to the formula.
+- Sleep and Resting HR tiles show "—" (no HealthKit). The mic, +, barcode and photo buttons do nothing.
+- The dinner suggestion on Eat is hardcoded. Workout history ("previous" sets) shows the plan's targets.
