@@ -41,7 +41,7 @@ The current phone app cannot connect unchanged: its APIClient sends no authoriza
 The existing Card enum still decodes type/data. It ignores new metadata, so keep default
 plan_mode=save with the current navigation-only Save to Train button until proposal UI changes.
 After repeat Start, refresh workouts and use the returned current session's new integer set
-IDs; a stale completed-session set ID is intentionally read-only. Session-history APIs now
+IDs; completed-session set IDs stay editable so finished workouts can be corrected. Session-history APIs now
 provide actual previous sets; the current Train PREVIOUS text still shows template targets.
 
 ## Optional proposal Save integration
@@ -88,7 +88,7 @@ Representative payload (manual example; use visualize_sdk only for actual SDK ou
 ```
 
 Generate client_scan_id once for each captured result and retain it through ingestion retries.
-Use a stable Idempotency-Key too. Values must be finite/positive with explicit cm/kg/percent
+Use a stable Idempotency-Key too. Values must be finite/positive with explicit cm/kg/percent/ratio/index
 units; percentages cannot exceed 100. Identifiers are lowercase snake_case, unique in the
 summary. captured_at must include an offset. Send source_metadata only from
 sdk_version/device_model/mapping_version. Do not upload the entire ScanResult, frames or images.

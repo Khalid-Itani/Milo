@@ -173,7 +173,7 @@ def finish_workout(s, id):
 def add_set(s, id, body):
     ex = get(s, Exercise, id)
     session = latest_session(s, ex.workout_id)
-    if session is None or session.status != "active":
+    if session is None or session.status not in ("active", "completed"):  # finished sessions stay editable
         raise HTTPException(409, "Start this workout before adding sets")
     rows = session_sets(s, session.id, id)
     row = WorkoutSet(owner_id=settings.demo_user_id, exercise_id=id, session_id=session.id,
@@ -186,8 +186,8 @@ def add_set(s, id, body):
 def patch_set(s, id, body):
     row = get(s, WorkoutSet, id)
     session = get(s, WorkoutSession, row.session_id)
-    if session.status != "active":
-        raise HTTPException(409, "Sets are editable only during an active session")
+    if session.status not in ("active", "completed"):  # finished sessions stay editable
+        raise HTTPException(409, "Start this workout before editing sets")
     for k, v in body.model_dump(exclude_none=True).items():
         setattr(row, k, v)
     s.add(row)
@@ -196,14 +196,17 @@ def patch_set(s, id, body):
 
 
 def log_set(s, body):
+    # No active session: edit the most recently finished one (fixing a workout after Finish).
     session = (get(s, WorkoutSession, body.session_id) if body.session_id else
-               s.exec(owned(WorkoutSession).where(WorkoutSession.status == "active")).first())
-    if session is None or session.status != "active":
+               s.exec(owned(WorkoutSession).where(WorkoutSession.status == "active")).first() or
+               s.exec(owned(WorkoutSession).where(WorkoutSession.status == "completed")
+                      .order_by(WorkoutSession.finished_at.desc())).first())
+    if session is None or session.status not in ("active", "completed"):
         raise HTTPException(409, "Ask the user to start the intended workout")
     matches = [e for e in exercises(s, session.workout_id) if
                (e.id == body.exercise_id if body.exercise_id else e.name.casefold() == body.exercise_name.casefold())]
     if len(matches) != 1:
-        raise HTTPException(409, "Ask which exercise in the active session")
+        raise HTTPException(409, "Ask which exercise in that session")
     ex = matches[0]
     rows = session_sets(s, session.id, ex.id)
     target = next((r for r in rows if r.set_index == body.set_index), None) if body.set_index is not None else next((r for r in rows if not r.done), None)

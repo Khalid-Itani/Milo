@@ -203,7 +203,9 @@ def test_repeated_sessions_and_frequency_goal(c, monkeypatch):
     assert second["exercises"][0]["sets"][0]["id"] != setid
     assert not second["exercises"][0]["sets"][0]["done"]
     assert c.get(f"/sessions/{sid}").json()["exercises"][0]["sets"][0]["done"]
-    assert c.patch(f"/sets/{setid}", json={"done": False}).status_code == 409
+    # Finished sessions stay editable (fixing a workout after Finish).
+    assert c.patch(f"/sets/{setid}", json={"reps": 9}).json()["reps"] == 9
+    assert c.get(f"/sessions/{sid}").json()["exercises"][0]["sets"][0]["reps"] == 9
     c.post(f"/workouts/{w['id']}/finish")
     mock_turn(monkeypatch, [("set_goal", {"title": "Train three times weekly", "kind": "habit", "unit": "sessions", "target_value": 3})])
     c.post("/chat", json={"message": "Set a training frequency goal"})
@@ -378,3 +380,16 @@ def test_production_has_no_sqlite_fallback(monkeypatch):
         with pytest.raises(RuntimeError):
             db.get_engine()
     db.get_engine.cache_clear()
+
+
+def test_coach_edits_finished_session(c, monkeypatch):
+    w = c.get("/workouts").json()[-1]
+    sid = c.post(f"/workouts/{w['id']}/start").json()["session_id"]
+    c.post(f"/workouts/{w['id']}/finish")
+    # No active session: the tool falls back to the most recently finished one.
+    mock_turn(monkeypatch, [("get_recent_sessions", {}),
+                            ("log_workout_set", {"exercise_name": "Bench Press", "kg": 55, "reps": 8, "set_index": 0})])
+    card = c.post("/chat", json={"message": "Fix my bench: first set was 55 kg x 8"}).json()["cards"][0]
+    assert card["type"] == "set_logged" and card["data"]["session_id"] == sid
+    first = c.get(f"/sessions/{sid}").json()["exercises"][0]["sets"][0]
+    assert (first["kg"], first["reps"], first["done"]) == (55, 8, True)

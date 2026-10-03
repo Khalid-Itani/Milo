@@ -890,7 +890,9 @@
             "enum": [
               "cm",
               "kg",
-              "percent"
+              "percent",
+              "ratio",
+              "index"
             ],
             "title": "Unit",
             "type": "string"

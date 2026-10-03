@@ -89,6 +89,18 @@ final class AppStore {
         return saved
     }
 
+    // MARK: Body scan (Visualize AI)
+
+    func visualizeSessionToken() async throws -> String {
+        let session: VisualizeSession = try await api.post("/visualize/session")
+        return session.sessionToken
+    }
+
+    func saveBodyScan(bodyFatPercent: Double) async {
+        await run { profile = try await api.post("/profile/scan", ScanInput(bodyFatPercent: bodyFatPercent)) }
+        await refreshToday()
+    }
+
     // MARK: Coach
 
     func send(_ text: String) async {

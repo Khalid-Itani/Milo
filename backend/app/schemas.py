@@ -136,7 +136,7 @@ class EmptyIn(Input):
 class Metric(Input):
     identifier: str = Field(pattern=r"^[a-z][a-z0-9_]{0,63}$")
     value: float = Field(allow_inf_nan=False)
-    unit: Literal["cm", "kg", "percent"]
+    unit: Literal["cm", "kg", "percent", "ratio", "index"]  # ratio/index: unitless Visualize health indicators
     @model_validator(mode="after")
     def metric_range(self):
         if self.value <= 0 or (self.unit == "percent" and self.value > 100):

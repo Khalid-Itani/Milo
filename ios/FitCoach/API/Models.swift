@@ -15,6 +15,7 @@ struct User: Codable {
     var fatG: Double?
     var bmi: Double?
     var bmiCategory: String?
+    var bodyFatPct: Double?
 }
 
 struct ProfileInput: Encodable {
@@ -37,6 +38,7 @@ struct Today: Codable {
     var macros: Macros
     var bmi: BMI?
     var weightKg: Double?
+    var bodyFatPct: Double?
     var week: Week
     var nextWorkout: NextWorkout?
     var coachTip: String
@@ -149,6 +151,8 @@ struct ChatMessage: Codable, Identifiable {
 struct ChatReply: Codable { var reply: String; var cards: [Card] }
 struct ChatInput: Encodable { var message: String }
 struct OK: Codable { var ok: Bool }
+struct VisualizeSession: Codable { var sessionToken: String; var expiresAt: String }
+struct ScanInput: Encodable { var bodyFatPercent: Double }
 
 // MARK: Cards
 

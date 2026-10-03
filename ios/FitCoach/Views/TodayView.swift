@@ -12,6 +12,7 @@ struct TodayView: View {
                     tipCard(t.coachTip)
                     fuelCard(t)
                     metrics(t)
+                    BodyScanButton()
                     weekCard(t)
                 } else {
                     ProgressView().padding(.top, 80)
@@ -92,7 +93,7 @@ struct TodayView: View {
         LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible())], spacing: 10) {
             MetricTile(icon: "figure.stand", title: "BMI",
                        value: t.bmi?.value.map(fmt) ?? "—", unit: nil,
-                       footnote: t.bmi?.category ?? "Add height and weight")
+                       footnote: t.bmi?.category.map { c in t.bodyFatPct.map { "\(c) · \(fmt($0))% fat" } ?? c } ?? "Add height and weight")
             // ponytail: no HealthKit in the MVP, so Sleep and Resting HR are placeholders.
             MetricTile(icon: "moon", title: "Sleep", value: "—", unit: nil, footnote: "No data")
             MetricTile(icon: "heart", title: "Resting HR", value: "—", unit: "bpm", footnote: "No data")

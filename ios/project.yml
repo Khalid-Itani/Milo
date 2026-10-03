@@ -18,6 +18,7 @@ targets:
       path: FitCoach/Info.plist
       properties:
         CFBundleDisplayName: FitCoach
+        NSCameraUsageDescription: FitCoach uses the TrueDepth camera for Visualize body scans.
         UILaunchScreen: {}
         UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
         NSAppTransportSecurity:

@@ -6,4 +6,6 @@ enum Config {
     static let baseURL = URL(string: "http://localhost:8000")!
     // true = no backend needed; MockAPIClient serves the seed data from SPEC §2.4.
     static let useMock = false
+    // Visualize AI publishable key (safe to ship in the app). The secret key lives only in backend/.env.
+    static let visualizePublishableKey = "pk_test_n5K2sfz6B9bNSt4860hV87hBpYc7kXvlLqZ4wlOcRsU"
 }

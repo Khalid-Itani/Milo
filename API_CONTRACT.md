@@ -59,7 +59,10 @@ Workout rows are immutable templates. Saving a plan prepares its first session/s
 legacy detail screens get integer set IDs before Start. Starting uses those same prepared
 IDs; starting after Finish creates fresh session/set IDs, preserving completed records.
 Only one session may be active for the demo owner. Finish requires Start; repeating Finish
-is safe. Set edits require an active session; stale completed-session set IDs return 409.
+is safe. Sets are editable (PATCH /sets, POST /exercises/{id}/sets) in active and completed sessions,
+so a workout can be fixed after Finish; prepared (not started) sessions still return 409. The coach's
+log_workout_set targets the active session, else the most recently completed one, and get_recent_sessions
+lets it pick a specific session_id.
 The legacy Workout status/start/finish/sets reflect its latest prepared, active or completed
 session. Clients must refresh the workout after a repeat Start. Session statuses use
 prepared/active/completed only in the new session-history API; legacy status remains
@@ -136,7 +139,7 @@ POST /scans requires client_scan_id, captured_at (ISO 8601 with offset), source
 (visualize_sdk/manual/synthetic), metrics [{identifier,value,unit}] and optional source_metadata.
 Identifiers use lowercase snake_case, are unique per scan, and are at most 64 characters.
 Numeric values must be finite and positive; percent is at most 100. Explicit units are
-cm/kg/percent. Source metadata accepts only sdk_version/device_model/mapping_version strings.
+cm/kg/percent, plus ratio/index for unitless Visualize health indicators. Source metadata accepts only sdk_version/device_model/mapping_version strings.
 No frames, photos, arbitrary blobs or unselected raw ScanResult are accepted.
 
 Example waist_circumference is illustrative until the partner confirms the actual SDK field.
