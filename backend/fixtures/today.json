@@ -1,0 +1,49 @@
+{
+  "date": "2026-10-03",
+  "kcal": {
+    "target": 2450,
+    "eaten": 1620,
+    "left": 830
+  },
+  "macros": {
+    "protein": {
+      "eaten": 124,
+      "target": 160
+    },
+    "carbs": {
+      "eaten": 172,
+      "target": 260
+    },
+    "fat": {
+      "eaten": 48,
+      "target": 75
+    }
+  },
+  "bmi": {
+    "value": 23,
+    "category": "Normal"
+  },
+  "weight_kg": 74.6,
+  "week": {
+    "sessions_done": 3,
+    "sessions_target": 4,
+    "days": [
+      true,
+      true,
+      false,
+      true,
+      false,
+      false,
+      false
+    ]
+  },
+  "next_workout": {
+    "id": 4,
+    "name": "Upper B — Volume",
+    "exercise_count": 4,
+    "est_minutes": 55
+  },
+  "coach_tip": "830 kcal and 36 g protein remain against your saved targets.",
+  "targets_source": "synthetic_demo",
+  "latest_scan": null
+}

@@ -1,0 +1,36 @@
+[
+  {
+    "id": 4,
+    "name": "Upper B — Volume",
+    "day_label": "SAT",
+    "notes": "Synthetic demo template",
+    "status": "active",
+    "started_at": "2026-10-03T16:00:00+00:00",
+    "finished_at": null,
+    "plan_id": 1,
+    "session_id": 4,
+    "exercises": [
+      {
+        "id": 13,
+        "workout_id": 4,
+        "name": "Bench Press",
+        "position": 0,
+        "target_sets": 4,
+        "target_reps": 8,
+        "target_kg": 75,
+        "sets": [
+          {
+            "id": 31,
+            "exercise_id": 13,
+            "session_id": 4,
+            "set_index": 0,
+            "kg": 75,
+            "reps": 8,
+            "is_warmup": false,
+            "done": true
+          }
+        ]
+      }
+    ]
+  }
+]

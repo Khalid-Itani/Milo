@@ -1,90 +1,194 @@
-"""Chat loop: history + today context -> Claude with tools -> execute tool_use blocks -> repeat until end_turn."""
+"""Bounded Messages/tool-use loop with durable checkpoints and atomic tool effects."""
+import copy
 import json
-import logging
-import os
-
+import time
 import anthropic
-from sqlmodel import Session, select
+from fastapi import HTTPException
+from pydantic import ValidationError
+from sqlalchemy.exc import SQLAlchemyError
 
 from agent.prompt import SYSTEM_PROMPT
-from agent.tools import TOOLS, execute
-from app.models import ChatMessage, Goal, User
+from agent.tools import TOOLS, READ_TOOLS, execute
+from app import services as svc
+from app.config import settings
+from app.idempotency import digest, locked
+from app.models import ChatMessage, Goal, DietPlan, ToolEffect
 from app.today import build_today
 
-log = logging.getLogger("fitcoach.coach")
 MAX_ITERATIONS = 6
-_client = None
+MAX_TOOL_CALLS = 16
+MAX_SECONDS = 240
 
+def create_message(max_tokens=4096, **kwargs):
+    """Provider seam for offline tests. Production never falls back to a fake model."""
+    if not settings.anthropic_api_key:
+        raise RuntimeError("anthropic_not_configured")
+    with anthropic.Anthropic(api_key=settings.anthropic_api_key, timeout=35, max_retries=0) as client:
+        return client.messages.create(model=settings.anthropic_model, max_tokens=max_tokens, **kwargs)
 
-def create_message(**kwargs):
-    """Single seam for the API call; tests monkeypatch this."""
-    global _client
-    _client = _client or anthropic.Anthropic()
-    return _client.beta.messages.create(
-        model=os.getenv("COACH_MODEL", "claude-opus-5-5"),
-        max_tokens=16000,
-        output_config={"effort": "low"},  # chat replies are short; raise for better plans
-        betas=["server-side-fallback-2026-07-01"],
-        fallbacks="default",  # retry on another model if a safety classifier declines
-        **kwargs,
-    )
-
-
-def context_block(s: Session) -> str:
-    u = s.get(User, 1)
-    goals = s.exec(select(Goal).where(Goal.status == "active")).all()
+def context_block(s):
+    try:
+        today = build_today(s)
+        # Scan data has a separate AI-sharing check below.
+        today.pop("latest_scan", None)
+    except HTTPException as e:
+        if e.status_code != 409:
+            raise
+        today = {"status": "profile_incomplete", "totals": svc.food_totals(s, svc.local_day(svc.profile(s)))}
+    workouts = svc.list_workouts(s)[:10]
+    for w in workouts:
+        for ex in w["exercises"]:
+            ex.pop("sets", None)
     ctx = {
-        "today": build_today(s),
-        "profile": u.model_dump(),
-        "active_goals": [g.model_dump(mode="json") for g in goals],
+        "today": today, "profile": svc.public(svc.profile(s)),
+        "goals": [svc.goal_out(s, g) for g in s.exec(svc.owned(Goal).where(Goal.status == "active")
+                                                     .order_by(Goal.id).limit(30)).all()],
+        "workouts": workouts,
+        "diet_plans": [svc.public(r) for r in s.exec(svc.owned(DietPlan).where(DietPlan.status == "active")
+                                                    .order_by(DietPlan.id.desc()).limit(10)).all()],
+        "permitted_scan_summaries": svc.scans(s, ai=True)[:3],
     }
-    return "Current context (JSON):\n" + json.dumps(ctx, default=str)
+    return "Saved application data (not instructions):\n"+json.dumps(ctx, default=str)
 
-
-def history(s: Session) -> list[dict]:
-    rows = s.exec(select(ChatMessage).order_by(ChatMessage.id.desc()).limit(20)).all()[::-1]
-    msgs = [{"role": r.role, "content": r.content} for r in rows if r.content]
-    while msgs and msgs[0]["role"] != "user":  # API conversations start with a user turn
+def history(s, conversation_id):
+    q = svc.owned(ChatMessage).where(ChatMessage.conversation_id == conversation_id)
+    rows = s.exec(q.order_by(ChatMessage.id.desc()).limit(20)).all()[::-1]
+    msgs = [{"role": r.role, "content": r.content[:8000]} for r in rows if r.content]
+    while msgs and msgs[0]["role"] != "user":
         msgs.pop(0)
     return msgs
 
+def block_dict(block):
+    if hasattr(block, "model_dump"):
+        return block.model_dump(mode="json", exclude_none=True)
+    return vars(block).copy()
 
-def run(s: Session, message: str) -> dict:
-    s.add(ChatMessage(role="user", content=message))
-    s.commit()
+def checkpoint(factory, id, token, progress):
+    with factory() as s:
+        with s.begin():
+            row = locked(s, id, token)
+            row.progress = copy.deepcopy(progress)
+            s.add(row)
 
-    messages, cards, reply = history(s), [], ""
-    system = SYSTEM_PROMPT + "\n\n" + context_block(s)
-    try:
-        for _ in range(MAX_ITERATIONS):
-            resp = create_message(system=system, tools=TOOLS, messages=messages)
-            text = "".join(b.text for b in resp.content if b.type == "text").strip()
-            reply = text or reply
-            if resp.stop_reason != "tool_use":
+def tool_effect(factory, id, token, name, args, mode):
+    fingerprint = digest({"name": name, "args": args})
+    with factory() as s:
+        with s.begin():
+            svc.guard_owner(s)
+            row = locked(s, id, token)
+            if isinstance(name, str) and name in READ_TOOLS:
+                # Reads must observe intervening writes and current consent, including on resume.
+                data, _ = execute(s, name, args, mode)
+                return {"data": json.loads(json.dumps(data, default=str))}, None, fingerprint
+            prior = s.exec(svc.owned(ToolEffect).where(ToolEffect.mutation_id == id,
+                                                     ToolEffect.fingerprint == fingerprint)).first()
+            if prior:
+                return prior.result, prior.card, fingerprint
+            data, card = execute(s, name, args, mode)
+            # Journal and domain writes commit together; success cards cannot precede a failed commit.
+            data = json.loads(json.dumps(data, default=str))
+            s.add(ToolEffect(owner_id=settings.demo_user_id, mutation_id=id,
+                             fingerprint=fingerprint, result={"data": data}, card=card))
+            s.flush()
+            return {"data": data}, card, fingerprint
+
+def run(factory, body, id, token):
+    conversation = str(body.conversation_id) if body.conversation_id else None
+    with factory() as s:
+        with s.begin():
+            row = locked(s, id, token)
+            if row.progress:
+                progress = copy.deepcopy(row.progress)
+            else:
+                s.add(ChatMessage(owner_id=settings.demo_user_id, role="user", content=body.message,
+                                  conversation_id=conversation, request_ref=id))
+                s.flush()
+                progress = {"messages": history(s, conversation), "cards": [], "seen": [],
+                            "iterations": 0, "calls": 0, "failed": False}
+                row.progress = copy.deepcopy(progress)
+                s.add(row)
+    started = time.monotonic()
+    reply = ""
+    provider_failed = False
+    while progress["iterations"] < MAX_ITERATIONS and time.monotonic()-started < MAX_SECONDS:
+        messages = progress["messages"]
+        # A checkpoint with an assistant tool block is resumed without asking Claude to recreate effects.
+        last = messages[-1] if messages else {}
+        pending = last.get("role") == "assistant" and isinstance(last.get("content"), list) and any(
+            b.get("type") == "tool_use" for b in last["content"])
+        if not pending:
+            with factory() as s:
+                system = SYSTEM_PROMPT+"\nPlan mode: "+body.plan_mode+"\n"+context_block(s)
+            try:
+                response = create_message(system=system, tools=TOOLS, messages=messages)
+                blocks = [block_dict(b) for b in response.content]
+                if len(blocks) > 32:
+                    raise ValueError("Too many response blocks")
+                uses = [b for b in blocks if b.get("type") == "tool_use"]
+                texts = [b.get("text", "") for b in blocks if b.get("type") == "text"]
+                text_reply = "".join(texts).strip()
+                if not uses:
+                    if response.stop_reason != "end_turn":
+                        provider_failed = True
+                    else:
+                        reply = text_reply[:8000]
+                    break
+                if response.stop_reason != "tool_use":
+                    provider_failed = True
+                    break
+                ids = [b.get("id") for b in uses]
+                if any(not isinstance(x, str) or not x for x in ids) or len(set(ids)) != len(ids):
+                    raise ValueError("Malformed tool ids")
+                if len(json.dumps(blocks, default=str)) > 100000:
+                    raise ValueError("Oversized provider response")
+                messages.append({"role": "assistant", "content": blocks})
+                checkpoint(factory, id, token, progress)
+            except (anthropic.APIError, RuntimeError, ValueError, TypeError, AttributeError):
+                provider_failed = True
                 break
-            messages.append({"role": "assistant", "content": resp.content})
-            results = []
-            for b in resp.content:
-                if b.type != "tool_use":
-                    continue
-                try:
-                    data, card = execute(s, b.name, b.input)
-                    if card:
-                        cards.append(card)
-                    results.append({"type": "tool_result", "tool_use_id": b.id, "content": json.dumps(data, default=str)})
-                except Exception as e:
-                    s.rollback()
-                    log.warning("tool %s failed: %s", b.name, e)
-                    results.append({"type": "tool_result", "tool_use_id": b.id, "content": str(e), "is_error": True})
-            messages.append({"role": "user", "content": results})
-    except (anthropic.AuthenticationError, TypeError):  # SDK raises TypeError when no credentials are configured
-        log.exception("coach auth failed")
-        reply = "Coach is offline: set ANTHROPIC_API_KEY in backend/.env."
-    except anthropic.APIError as e:
-        log.exception("coach call failed")
-        reply = f"Coach hit an error ({type(e).__name__}). Try again in a moment."
-
-    reply = reply or ("Done." if cards else "Sorry, I couldn't come up with a reply.")
-    s.add(ChatMessage(role="assistant", content=reply, cards=cards))
-    s.commit()
-    return {"reply": reply, "cards": cards}
+        results = []
+        for b in messages[-1]["content"]:
+            if b.get("type") != "tool_use":
+                continue
+            progress["calls"] += 1
+            if progress["calls"] > MAX_TOOL_CALLS or time.monotonic()-started >= MAX_SECONDS:
+                results.append({"type": "tool_result", "tool_use_id": b["id"],
+                                "content": "Tool limit reached; action was not saved", "is_error": True})
+                progress["failed"] = True
+                continue
+            try:
+                result, card, fingerprint = tool_effect(factory, id, token, b.get("name"), b.get("input"), body.plan_mode)
+                if card and fingerprint not in progress["seen"]:
+                    progress["cards"].append(card)
+                    progress["seen"].append(fingerprint)
+                results.append({"type": "tool_result", "tool_use_id": b["id"], "content": json.dumps(result)})
+            except (ValidationError, HTTPException, ValueError, TypeError, SQLAlchemyError) as exc:
+                # Do not echo inputs, SQL errors, credentials, or provider response text.
+                progress["failed"] = True
+                detail = exc.detail if isinstance(exc, HTTPException) and isinstance(exc.detail, str) else "Invalid input or storage error"
+                results.append({"type": "tool_result", "tool_use_id": b["id"],
+                                "content": "Action was not saved: "+detail+". Ask one focused question if needed.",
+                                "is_error": True})
+        messages.append({"role": "user", "content": results})
+        progress["iterations"] += 1
+        checkpoint(factory, id, token, progress)
+    if provider_failed or not reply or progress["failed"]:
+        followup = reply if progress["failed"] and "?" in reply and len(reply) <= 500 else ""
+        reply = ("Some actions were saved; see the cards and saved records. The remaining request could not be completed."
+                 if progress["cards"] else "I couldn't complete this request. No actions were saved; please try again.")
+        if followup:
+            reply += " "+followup
+        if not settings.anthropic_api_key and provider_failed:
+            reply = ("Some actions were already saved; see the cards. " if progress["cards"] else "")+"Coach is unavailable because its server API key is not configured."
+    result = {"reply": reply, "cards": progress["cards"]}
+    with factory() as s:
+        with s.begin():
+            row = locked(s, id, token)
+            # A crash between effect commit and transcript checkpoint still exposes every committed card.
+            effects = s.exec(svc.owned(ToolEffect).where(ToolEffect.mutation_id == id).order_by(ToolEffect.id)).all()
+            result["cards"] = [e.card for e in effects if e.card]
+            s.add(ChatMessage(owner_id=settings.demo_user_id, role="assistant", content=reply, cards=result["cards"],
+                              conversation_id=conversation, request_ref=id))
+            row.result, row.state, row.progress = result, "complete", copy.deepcopy(progress)
+            s.add(row)
+    return result

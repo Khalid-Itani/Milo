@@ -1,0 +1,19 @@
+[
+  {
+    "id": 1,
+    "client_scan_id": "39a4c95c-e841-45e7-9e12-f199063c1945",
+    "captured_at": "2026-10-03T12:00:00+00:00",
+    "metrics": [
+      {
+        "identifier": "waist_circumference",
+        "value": 82,
+        "unit": "cm"
+      }
+    ],
+    "source": "manual",
+    "source_metadata": {
+      "mapping_version": "illustrative-v1"
+    },
+    "verification": "manual"
+  }
+]
